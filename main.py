@@ -49,28 +49,22 @@ def webhook():
                     "Content-Type": "application/json"
                 }
                 
-                # Paso 1: Consultar dinámicamente los modelos permitidos para esta API Key específica
-                selected_model = "llama-3.3-70b-versatile" # Valor por defecto
+                # Selección inteligente filtrando explícitamente clasificadores o guardias
+                selected_model = "llama-3.1-8b-instant"
                 try:
                     models_resp = requests.get("https://api.groq.com/openai/v1/models", headers=groq_headers)
                     if models_resp.status_code == 200:
                         model_list = models_resp.json().get("data", [])
-                        if model_list:
-                            # Elegir el primer modelo disponible que sea de texto/chat
-                            for m in model_list:
-                                m_id = m.get("id", "")
-                                if "llama" in m_id:
-                                    selected_model = m_id
-                                    break
-                            print(f"Modelo detectado automáticamente y en uso: {selected_model}")
-                        else:
-                            print("La API Key no devolvió ningún modelo disponible.")
-                    else:
-                        print(f"No se pudieron listar los modelos: {models_resp.text}")
+                        for m in model_list:
+                            m_id = m.get("id", "")
+                            if "llama" in m_id and "guard" not in m_id and ("versatile" in m_id or "instant" in m_id):
+                                selected_model = m_id
+                                break
+                        print(f"Modelo de chat seleccionado: {selected_model}")
                 except Exception as model_err:
                     print(f"Error consultando modelos: {model_err}")
 
-                # Paso 2: Realizar la petición de chat con el modelo detectado
+                # Realizar la petición de chat con el modelo de lenguaje correcto
                 groq_payload = {
                     "model": selected_model,
                     "messages": [
