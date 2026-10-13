@@ -75,26 +75,7 @@ def webhook():
         # Extraer texto del mensaje entrante
         text_message = ""
         if message_data.get("typeMessage") == "textMessage":
-            text_message = message_data.get("textMessageData", {}).get("textMessage", "")
-        elif message_data.get("typeMessage") == "extendedTextMessage":
-            text_message = message_data.get("extendedTextMessageData", {}).get("text", "")
-
-        if text_message and chat_id:
-            try:
-                response = groq_client.chat.completions.create(
-                    model="qwen-2.5-32b",
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": text_message}
-                    ],
-                    temperature=0.3
-                )
-                bot_reply = response.choices[0].message.content
-                enviar_mensaje_whatsapp(chat_id, bot_reply)
-            except Exception as e:
-                print(f"Error procesando con Groq: {e}")
-
-    return jsonify({"status": "success"}), 200
+            text_message = message_data.get("textMessageData
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
