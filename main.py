@@ -55,17 +55,19 @@ def webhook():
                 {text_message}
                 """
 
-                # Llamada HTTP directa a la API de Gemini (Consumo de RAM ultra bajo, sin SDKs pesados)
-                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                # Llamada HTTP directa a la API de Gemini con el modelo actualizado (gemini-3.8-flash)
+                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
                 gemini_payload = {
                     "contents": [{
                         "parts": [{"text": prompt}]
                     }]
                 }
                 
-                ai_reply = "¡Hola! Disculpa, en este momento no he podido procesar tu consulta. Inténtalo de nuevo en un segundo."
+                ai_reply = "¡Hola! Disculpa, en este momento el servicio de inteligencia está ocupado. Inténtalo de nuevo en un segundo."
                 
                 gemini_resp = requests.post(gemini_url, json=gemini_payload)
+                print(f"Estado respuesta Gemini: {gemini_resp.status_code}")
+                
                 if gemini_resp.status_code == 200:
                     res_json = gemini_resp.json()
                     try:
@@ -73,7 +75,7 @@ def webhook():
                     except Exception as parse_err:
                         print(f"Error parseando respuesta de Gemini: {parse_err}")
                 else:
-                    print(f"Error en API Gemini HTTP: {gemini_resp.text}")
+                    print(f"Error detallado de Gemini HTTP: {gemini_resp.text}")
 
                 # Enviar respuesta de vuelta a WhatsApp usando la API HTTP de Green-API
                 url = f"https://7107.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
