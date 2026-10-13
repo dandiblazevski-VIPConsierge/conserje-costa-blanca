@@ -4,7 +4,7 @@ import requests
 
 app = Flask(__name__)
 
-# Configuración de credenciales de Green-API y Groq desde las Variables de Entorno de Render
+# Configuración de credenciales desde las Variables de Entorno de Render (100% Gratis)
 ID_INSTANCE = os.getenv("GREEN_API_ID_INSTANCE")
 API_TOKEN_INSTANCE = os.getenv("GREEN_API_TOKEN_INSTANCE")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -17,7 +17,7 @@ if os.path.exists("guia.txt"):
 
 @app.route("/", methods=["GET"])
 def home():
-    return "El servidor del Bot Conserje de WhatsApp con Groq está activo y funcionando correctamente.", 200
+    return "Servidor del Conserje activo y 100% gratis.", 200
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -25,15 +25,13 @@ def webhook():
         data = request.json
         print("Datos recibidos del webhook:", data)
 
-        # Verificar si el evento corresponde a un mensaje entrante
+        # Verificar si el evento corresponde a un mensaje entrante de WhatsApp
         if data and data.get("typeWebhook") == "incomingMessageReceived":
             sender_data = data.get("senderData", {})
             message_data = data.get("messageData", {})
             
-            # Obtener el chat ID (remitente)
             chat_id = sender_data.get("chatId")
             
-            # Extraer el texto del mensaje
             text_message = ""
             if "textMessageData" in message_data:
                 text_message = message_data["textMessageData"].get("textMessage", "")
@@ -49,24 +47,19 @@ def webhook():
                     "Content-Type": "application/json"
                 }
                 
-                # Selección inteligente filtrando explícitamente clasificadores o guardias
-                selected_model = "llama-3.1-8b-instant"
+                # Autodiagnóstico en los logs: Imprime los modelos exactos permitidos para tu clave
                 try:
                     models_resp = requests.get("https://api.groq.com/openai/v1/models", headers=groq_headers)
                     if models_resp.status_code == 200:
-                        model_list = models_resp.json().get("data", [])
-                        for m in model_list:
-                            m_id = m.get("id", "")
-                            if "llama" in m_id and "guard" not in m_id and ("versatile" in m_id or "instant" in m_id):
-                                selected_model = m_id
-                                break
-                        print(f"Modelo de chat seleccionado: {selected_model}")
+                        print("Modelos disponibles en tu cuenta:", [m.get("id") for m in models_resp.json().get("data", [])])
+                    else:
+                        print("Error al listar modelos:", models_resp.text)
                 except Exception as model_err:
-                    print(f"Error consultando modelos: {model_err}")
+                    print("Excepción al consultar modelos:", model_err)
 
-                # Realizar la petición de chat con el modelo de lenguaje correcto
+                # Petición de chat con el modelo estándar gratuito
                 groq_payload = {
-                    "model": selected_model,
+                    "model": "llama-3.1-8b-instant",
                     "messages": [
                         {
                             "role": "system",
@@ -94,7 +87,7 @@ def webhook():
                 else:
                     print(f"Error detallado de Groq HTTP: {groq_resp.text}")
 
-                # Enviar respuesta de vuelta a WhatsApp usando la API HTTP de Green-API
+                # Enviar respuesta de vuelta a WhatsApp mediante Green-API
                 url = f"https://7107.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
                 payload = {
                     "chatId": chat_id,
