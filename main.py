@@ -43,7 +43,7 @@ def webhook():
             if chat_id and text_message:
                 print(f"Mensaje recibido de {chat_id}: {text_message}")
 
-                # Llamada HTTP directa a la API de Groq
+                # Llamada HTTP directa a la API de Groq con el modelo universal 8B
                 groq_url = "https://api.groq.com/openai/v1/chat/completions"
                 groq_headers = {
                     "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -51,7 +51,7 @@ def webhook():
                 }
                 
                 groq_payload = {
-                    "model": "llama-3.3-70b-versatile",
+                    "model": "llama-3.1-8b-instant",
                     "messages": [
                         {
                             "role": "system",
