@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, jsonify
 import requests
-import google.generativeai as genai
+from google import genai
 
 app = Flask(__name__)
 
@@ -10,27 +10,8 @@ ID_INSTANCE = os.getenv("GREEN_API_ID_INSTANCE")
 API_TOKEN_INSTANCE = os.getenv("GREEN_API_TOKEN_INSTANCE")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Inicializar Gemini
-genai.configure(api_key=GEMINI_API_KEY)
-
-# Configuración del modelo Gemini (con un System Prompt de Conserje)
-generation_config = {
-    "temperature": 0.7,
-    "top_p": 0.95,
-    "top_k": 40,
-    "max_output_tokens": 8192,
-}
-
-system_instruction = (
-    "Eres un conserje virtual amable y eficiente para alojamientos turísticos en la Costa Blanca. "
-    "Respondes de forma clara, educada y servicial basándote en la información disponible."
-)
-
-model = genai.GenerativeModel(
-    model_name="gemini-3.8-flash",
-    generation_config=generation_config,
-    system_instruction=system_instruction
-)
+# Inicializar el cliente oficial de Gemini
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Cargar la guía de información si existe
 GUIDE_TEXT = "Bienvenido a tu alojamiento en la Costa Blanca."
@@ -66,19 +47,23 @@ def webhook():
             if chat_id and text_message:
                 print(f"Mensaje recibido de {chat_id}: {text_message}")
 
-                # Crear el prompt combinando la guía y la pregunta del huésped
+                # Prompt estructurado para la conserjería
                 prompt = f"""
+                Eres un conserje virtual amable y eficiente para alojamientos turísticos en la Costa Blanca.
+                Respondes de forma clara, educada y servicial basándote en la información disponible.
+
                 Información de la guía del alojamiento:
                 {GUIDE_TEXT}
 
                 Pregunta del huésped:
                 {text_message}
-
-                Responde de manera natural, servicial y directa al huésped basándote en la guía.
                 """
 
-                # Generar respuesta con Gemini
-                response = model.generate_content(prompt)
+                # Generar respuesta con la API actual de Gemini
+                response = client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                )
                 ai_reply = response.text
 
                 # Enviar respuesta de vuelta a WhatsApp usando la API HTTP de Green-API
@@ -90,7 +75,7 @@ def webhook():
                 headers = {'Content-Type': 'application/json'}
                 
                 resp = requests.post(url, json=payload, headers=headers)
-                print(f"Respuesta enviada a WhatsApp, estado: {resp.status_code}")
+                print(f"Respuesta enviada a WhatsApp, estado HTTP: {resp.status_code}")
 
     except Exception as e:
         print(f"ERROR CRITICO EN WEBHOOK: {str(e)}")
