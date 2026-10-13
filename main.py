@@ -43,7 +43,7 @@ def webhook():
             if chat_id and text_message:
                 print(f"Mensaje recibido de {chat_id}: {text_message}")
 
-                # Llamada HTTP directa a la API de Groq (Llama 3)
+                # Llamada HTTP directa a la API de Groq con el modelo activo y estable
                 groq_url = "https://api.groq.com/openai/v1/chat/completions"
                 groq_headers = {
                     "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -51,7 +51,7 @@ def webhook():
                 }
                 
                 groq_payload = {
-                    "model": "llama3-70b-8192",
+                    "model": "llama-3.1-70b-versatile",
                     "messages": [
                         {
                             "role": "system",
@@ -96,10 +96,6 @@ def webhook():
         traceback.print_exc()
 
     return jsonify({"status": "success"}), 200
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
