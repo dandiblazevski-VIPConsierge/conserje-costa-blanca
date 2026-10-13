@@ -14,22 +14,31 @@
 - Soporte urgente del anfitrión (Llaves, incidencias graves o llamadas): Contactar por WhatsApp al +43 67761789024.
 - Teléfonos de emergencias en Macedonia: 112 (Emergencias generales) | 192 (Policía / Policija) | 193 (Bomberos / Pozarna) | 194 (Ambulancia / Brza pomos).
 
-=== RECOMENDACIONES Y SERVICIOS CERCANOS EN SKOPIE ===
-- Restaurantes y Comida Local:
-  * Pelister: https://maps.app.goo.gl/70xWaLQVVBMR8DcxK (Excelente cocina local e internacional en el centro de Skopie).
-  * Antiguo Bazar de Skopie (Stari Bazar): https://maps.app.goo.gl/N5g3ra8VVBMRSB7eX (Zona histórica imprescindible con tabernas tradicionales).
-  * Destan: https://maps.app.goo.gl/example (Famoso por sus tradicionales ćevapi en el bazar).
+=== RECOMENDACIONES Y SERVICIOS CERCANOS ===
 
-- Farmacias y Salud:
-  * Зегин Аптека Буњаковец (Zegin Pharmacy): https://maps.app.goo.gl/JaGYDkwUVBMRq8vzy (Farmacia de confianza muy completa y cercana).
-
-- Cafeterías y Panaderías:
-  * Opciones locales en Skopie para desayunar, pan fresco y café de especialidad.
-
+--- FARMACIAS Y TRANSPORTE ---
+- Farmacias cercanas:
+  * Zegin Pharmacy: https://www.google.com/maps/search/?api=1&query=Zegin+Pharmacy+Skopje (Farmacia completa y cercana).
 - Taxis y Transporte:
-  * Contactos de radio-taxi recomendados y opciones de movilidad en la ciudad.
-=== RECOMENDACIONES Y SERVICIOS CERCANOS EN LA CIUDAD ===
-- Dónde comer / Cenas y Cafés: El bot recomendará puntos clave y muy valorados como el restaurante Pelister o la emblemática zona gastronómica del Antiguo Bazar de Skopie, facilitando ubicación y enlaces directos.
-- Farmacias: Para cualquier urgencia médica, se indicará el acceso a farmacias de confianza como Зегин Аптека Буњаковец.
-- Taxis y Transporte: El bot ofrecerá enlaces de movilidad y contactos de radio-taxi de confianza en la ciudad.
-- Experiencias VIP & Ocio: Información sobre reservas especiales, traslados y actividades exclusivas en la región.
+  * Skopje Taxi: https://www.google.com/maps/search/?api=1&query=Skopje+Taxi (Servicios de taxi locales en la ciudad).
+
+--- RECOMENDACIONES DE COMIDA SEGÚN UBICACIÓN ---
+(REGLA OBLIGATORIA: Cuando pregunten por comer o cenar, NO envíes la lista de golpe. Pregunta primero en qué zona están: alojamiento, centro o Antiguo Bazar).
+
+1. SI ESTÁN EN EL ALOJAMIENTO / DEBAR MAALO (Cerca de la casa):
+   * Skopski Merak: Excelente cocina tradicional macedonia a pocos minutos.
+     https://www.google.com/maps/search/?api=1&query=Restaurant+Skopski+Merak+Skopje
+   * Matto Napoletano: Pizzería artesanal italiana de gran calidad muy cerca.
+     https://www.google.com/maps/search/?api=1&query=Matto+Napoletano+Skopje
+
+2. SI ESTÁN EN EL CENTRO / PLAZA MACEDONIA (Macedonia Square):
+   * Pelister: Restaurante emblemático con terraza en la plaza principal.
+     https://www.google.com/maps/search/?api=1&query=Pelister+Restaurant+Skopje
+   * Amigos Restaurant & Bar: Comida variada y buen ambiente céntrico.
+     https://www.google.com/maps/search/?api=1&query=Amigos+Restaurant+Skopje
+
+3. SI ESTÁN EN EL ANTIGUO BAZAR (Stari Bazar):
+   * Destan: Famoso por los tradicionales ćevapi macedonios.
+     https://www.google.com/maps/search/?api=1&query=Destan+Old+Bazar+Skopje
+   * Turist: Especialidad en carnes a la parrilla tradicionales.
+     https://www.google.com/maps/search/?api=1&query=Restaurant+Turist+Old+Bazar+Skopje
