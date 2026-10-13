@@ -13,26 +13,27 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 groq_client = Groq(api_key=GROQ_API_KEY)
 
 def obtener_modelo_activo():
-    """Obtiene dinámicamente el mejor modelo disponible en la cuenta para evitar errores 404."""
+    """Obtiene dinámicamente un modelo de chat válido, excluyendo guards y embeddings."""
     try:
         modelos_response = groq_client.models.list()
         modelos_disponibles = [m.id for m in modelos_response.data]
         
-        # Buscar el mejor modelo Llama disponible
-        for prefijo in ["llama-3.3-70b", "llama3-70b", "llama-3.1-8b", "llama3-8b"]:
+        # Buscar preferiblemente modelos de chat estables evitando filtros de seguridad o audio
+        for prefijo in ["llama-3.3-70b", "llama3-70b", "llama-3.1-8b", "llama3-8b", "llama-3", "gemma2", "mistral"]:
             for m_id in modelos_disponibles:
-                if prefijo in m_id:
-                    print(f"Modelo seleccionado dinámicamente: {m_id}")
+                if prefijo in m_id and "guard" not in m_id and "embed" not in m_id and "whisper" not in m_id:
+                    print(f"Modelo de chat seleccionado: {m_id}")
                     return m_id
         
-        # Si no encuentra coincidencia con los preferidos, usa el primero activo
-        if modelos_disponibles:
-            print(f"Usando primer modelo activo disponible: {modelos_disponibles[0]}")
-            return modelos_disponibles[0]
+        # Buscar cualquier otro modelo que sirva para chat
+        for m_id in modelos_disponibles:
+            if "guard" not in m_id and "embed" not in m_id and "whisper" not in m_id:
+                print(f"Usando modelo alternativo válido: {m_id}")
+                return m_id
     except Exception as e:
         print(f"Error consultando modelos activos: {e}")
     
-    return "llama3-70b-8192"
+    return "llama-3.1-8b-instant"
 
 def cargar_guia():
     try:
