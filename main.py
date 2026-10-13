@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request, jsonify
-from whatsapp_api_client_python import GreenAPI
+import requests
 import google.generativeai as genai
 
 app = Flask(__name__)
@@ -10,8 +10,7 @@ ID_INSTANCE = os.getenv("GREEN_API_ID_INSTANCE")
 API_TOKEN_INSTANCE = os.getenv("GREEN_API_TOKEN_INSTANCE")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Inicializar Green-API y Gemini
-green_api = GreenAPI(ID_INSTANCE, API_TOKEN_INSTANCE)
+# Inicializar Gemini
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Configuración del modelo Gemini (con un System Prompt de Conserje)
@@ -57,7 +56,7 @@ def webhook():
             # Obtener el chat ID (remitente)
             chat_id = sender_data.get("chatId")
             
-            # Extraer el texto del mensaje (soporta texto plano o extendido)
+            # Extraer el texto del mensaje
             text_message = ""
             if "textMessageData" in message_data:
                 text_message = message_data["textMessageData"].get("textMessage", "")
@@ -82,9 +81,16 @@ def webhook():
                 response = model.generate_content(prompt)
                 ai_reply = response.text
 
-                # Enviar respuesta de vuelta a WhatsApp usando Green-API
-                green_api.sending.sendMessage(chat_id, ai_reply)
-                print(f"Respuesta enviada a {chat_id}")
+                # Enviar respuesta de vuelta a WhatsApp usando la API HTTP de Green-API
+                url = f"https://7107.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
+                payload = {
+                    "chatId": chat_id,
+                    "message": ai_reply
+                }
+                headers = {'Content-Type': 'application/json'}
+                
+                resp = requests.post(url, json=payload, headers=headers)
+                print(f"Respuesta enviada a WhatsApp, estado: {resp.status_code}")
 
     except Exception as e:
         print(f"ERROR CRITICO EN WEBHOOK: {str(e)}")
