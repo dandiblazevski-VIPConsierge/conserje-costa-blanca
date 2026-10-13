@@ -4,10 +4,10 @@ import requests
 
 app = Flask(__name__)
 
-# Configuración de credenciales desde las Variables de Entorno de Render
+# Configuración de credenciales de Green-API y Groq desde las Variables de Entorno de Render
 ID_INSTANCE = os.getenv("GREEN_API_ID_INSTANCE")
 API_TOKEN_INSTANCE = os.getenv("GREEN_API_TOKEN_INSTANCE")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Cargar la guía de información si existe
 GUIDE_TEXT = "Bienvenido a tu alojamiento en la Costa Blanca."
@@ -17,7 +17,7 @@ if os.path.exists("guia.txt"):
 
 @app.route("/", methods=["GET"])
 def home():
-    return "El servidor del Bot Conserje de WhatsApp está activo y funcionando correctamente.", 200
+    return "El servidor del Bot Conserje de WhatsApp con Groq está activo y funcionando correctamente.", 200
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
@@ -43,39 +43,41 @@ def webhook():
             if chat_id and text_message:
                 print(f"Mensaje recibido de {chat_id}: {text_message}")
 
-                # Prompt estructurado para la conserjería
-                prompt = f"""
-                Eres un conserje virtual amable y eficiente para alojamientos turísticos en la Costa Blanca.
-                Respondes de forma clara, educada y servicial basándote en la información disponible.
-
-                Información de la guía del alojamiento:
-                {GUIDE_TEXT}
-
-                Pregunta del huésped:
-                {text_message}
-                """
-
-                # Llamada HTTP directa con la URL correcta del modelo actual
-                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
-                gemini_payload = {
-                    "contents": [{
-                        "parts": [{"text": prompt}]
-                    }]
+                # Llamada HTTP directa a la API de Groq (Llama 3)
+                groq_url = "https://api.groq.com/openai/v1/chat/completions"
+                groq_headers = {
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "Content-Type": "application/json"
+                }
+                
+                groq_payload = {
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": f"Eres un conserje virtual amable y eficiente para alojamientos turísticos en la Costa Blanca. Respondes de forma clara, educada y servicial basándote en la siguiente información de la guía del alojamiento:\n\n{GUIDE_TEXT}"
+                        },
+                        {
+                            "role": "user",
+                            "content": text_message
+                        }
+                    ],
+                    "temperature": 0.7
                 }
                 
                 ai_reply = "¡Hola! Disculpa, en este momento el servicio está temporalmente ocupado. Inténtalo de nuevo en un segundo."
                 
-                gemini_resp = requests.post(gemini_url, json=gemini_payload)
-                print(f"Estado respuesta Gemini: {gemini_resp.status_code}")
+                groq_resp = requests.post(groq_url, json=groq_payload, headers=groq_headers)
+                print(f"Estado respuesta Groq: {groq_resp.status_code}")
                 
-                if gemini_resp.status_code == 200:
-                    res_json = gemini_resp.json()
+                if groq_resp.status_code == 200:
+                    res_json = groq_resp.json()
                     try:
-                        ai_reply = res_json["candidates"][0]["content"]["parts"][0]["text"]
+                        ai_reply = res_json["choices"][0]["message"]["content"]
                     except Exception as parse_err:
-                        print(f"Error parseando respuesta de Gemini: {parse_err}")
+                        print(f"Error parseando respuesta de Groq: {parse_err}")
                 else:
-                    print(f"Error detallado de Gemini HTTP: {gemini_resp.text}")
+                    print(f"Error detallado de Groq HTTP: {groq_resp.text}")
 
                 # Enviar respuesta de vuelta a WhatsApp usando la API HTTP de Green-API
                 url = f"https://7107.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
