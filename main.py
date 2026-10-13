@@ -43,15 +43,36 @@ def webhook():
             if chat_id and text_message:
                 print(f"Mensaje recibido de {chat_id}: {text_message}")
 
-                # Llamada HTTP directa a la API de Groq con el modelo universal 8B
                 groq_url = "https://api.groq.com/openai/v1/chat/completions"
                 groq_headers = {
                     "Authorization": f"Bearer {GROQ_API_KEY}",
                     "Content-Type": "application/json"
                 }
                 
+                # Paso 1: Consultar dinámicamente los modelos permitidos para esta API Key específica
+                selected_model = "llama-3.3-70b-versatile" # Valor por defecto
+                try:
+                    models_resp = requests.get("https://api.groq.com/openai/v1/models", headers=groq_headers)
+                    if models_resp.status_code == 200:
+                        model_list = models_resp.json().get("data", [])
+                        if model_list:
+                            # Elegir el primer modelo disponible que sea de texto/chat
+                            for m in model_list:
+                                m_id = m.get("id", "")
+                                if "llama" in m_id:
+                                    selected_model = m_id
+                                    break
+                            print(f"Modelo detectado automáticamente y en uso: {selected_model}")
+                        else:
+                            print("La API Key no devolvió ningún modelo disponible.")
+                    else:
+                        print(f"No se pudieron listar los modelos: {models_resp.text}")
+                except Exception as model_err:
+                    print(f"Error consultando modelos: {model_err}")
+
+                # Paso 2: Realizar la petición de chat con el modelo detectado
                 groq_payload = {
-                    "model": "llama-3.1-8b-instant",
+                    "model": selected_model,
                     "messages": [
                         {
                             "role": "system",
