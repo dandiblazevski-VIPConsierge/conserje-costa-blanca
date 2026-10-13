@@ -51,7 +51,7 @@ def webhook():
                 }
                 
                 groq_payload = {
-                    "model": "llama-3.3-70b-versatile",
+                    "model": "llama3-70b-8192",
                     "messages": [
                         {
                             "role": "system",
@@ -96,6 +96,10 @@ def webhook():
         traceback.print_exc()
 
     return jsonify({"status": "success"}), 200
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
