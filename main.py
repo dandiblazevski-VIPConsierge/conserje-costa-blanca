@@ -1,8 +1,6 @@
 import os
-import time
 from flask import Flask, request, jsonify
 import requests
-from google import genai
 
 app = Flask(__name__)
 
@@ -10,9 +8,6 @@ app = Flask(__name__)
 ID_INSTANCE = os.getenv("GREEN_API_ID_INSTANCE")
 API_TOKEN_INSTANCE = os.getenv("GREEN_API_TOKEN_INSTANCE")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Inicializar el cliente oficial de Gemini
-client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Cargar la guía de información si existe
 GUIDE_TEXT = "Bienvenido a tu alojamiento en la Costa Blanca."
@@ -60,23 +55,25 @@ def webhook():
                 {text_message}
                 """
 
-                # Generar respuesta con reintentos automáticos ante saturación (503)
-                response = None
-                for attempt in range(3):
+                # Llamada HTTP directa a la API de Gemini (Consumo de RAM ultra bajo, sin SDKs pesados)
+                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                gemini_payload = {
+                    "contents": [{
+                        "parts": [{"text": prompt}]
+                    }]
+                }
+                
+                ai_reply = "¡Hola! Disculpa, en este momento no he podido procesar tu consulta. Inténtalo de nuevo en un segundo."
+                
+                gemini_resp = requests.post(gemini_url, json=gemini_payload)
+                if gemini_resp.status_code == 200:
+                    res_json = gemini_resp.json()
                     try:
-                        response = client.models.generate_content(
-                            model="gemini-3.8-flash",
-                            contents=prompt,
-                        )
-                        break
-                    except Exception as api_err:
-                        print(f"Intento {attempt + 1} fallido por saturación de Google: {api_err}")
-                        time.sleep(2)
-
-                if response and hasattr(response, 'text'):
-                    ai_reply = response.text
+                        ai_reply = res_json["candidates"][0]["content"]["parts"][0]["text"]
+                    except Exception as parse_err:
+                        print(f"Error parseando respuesta de Gemini: {parse_err}")
                 else:
-                    ai_reply = "¡Hola! Disculpa, en este momento el sistema está procesando muchas peticiones. Por favor, repíteme tu pregunta en un segundito."
+                    print(f"Error en API Gemini HTTP: {gemini_resp.text}")
 
                 # Enviar respuesta de vuelta a WhatsApp usando la API HTTP de Green-API
                 url = f"https://7107.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
