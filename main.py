@@ -59,7 +59,7 @@ def webhook():
                 {text_message}
                 """
 
-                # Generar respuesta con el modelo exacto que solicita Google
+                # Generar respuesta con el modelo actual oficial
                 response = client.models.generate_content(
                     model="gemini-3.8-flash",
                     contents=prompt,
