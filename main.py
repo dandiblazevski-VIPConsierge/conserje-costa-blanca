@@ -55,15 +55,15 @@ def webhook():
                 {text_message}
                 """
 
-                # Llamada HTTP directa a la API de Gemini con el modelo actualizado (gemini-3.8-flash)
-                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
+                # Llamada HTTP directa con el modelo ultraestable gemini-1.5-flash
+                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
                 gemini_payload = {
                     "contents": [{
                         "parts": [{"text": prompt}]
                     }]
                 }
                 
-                ai_reply = "¡Hola! Disculpa, en este momento el servicio de inteligencia está ocupado. Inténtalo de nuevo en un segundo."
+                ai_reply = "¡Hola! Disculpa, en este momento el servicio está temporalmente ocupado. Inténtalo de nuevo en un segundo."
                 
                 gemini_resp = requests.post(gemini_url, json=gemini_payload)
                 print(f"Estado respuesta Gemini: {gemini_resp.status_code}")
