@@ -12,6 +12,28 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 
+def obtener_modelo_activo():
+    """Obtiene dinámicamente el mejor modelo disponible en la cuenta para evitar errores 404."""
+    try:
+        modelos_response = groq_client.models.list()
+        modelos_disponibles = [m.id for m in modelos_response.data]
+        
+        # Buscar el mejor modelo Llama disponible
+        for prefijo in ["llama-3.3-70b", "llama3-70b", "llama-3.1-8b", "llama3-8b"]:
+            for m_id in modelos_disponibles:
+                if prefijo in m_id:
+                    print(f"Modelo seleccionado dinámicamente: {m_id}")
+                    return m_id
+        
+        # Si no encuentra coincidencia con los preferidos, usa el primero activo
+        if modelos_disponibles:
+            print(f"Usando primer modelo activo disponible: {modelos_disponibles[0]}")
+            return modelos_disponibles[0]
+    except Exception as e:
+        print(f"Error consultando modelos activos: {e}")
+    
+    return "llama3-70b-8192"
+
 def cargar_guia():
     try:
         if os.path.exists("guia.txt"):
@@ -80,8 +102,9 @@ def webhook():
 
         if text_message and chat_id:
             try:
+                modelo_a_usar = obtener_modelo_activo()
                 response = groq_client.chat.completions.create(
-                    model="qwen/qwen3-32b",
+                    model=modelo_a_usar,
                     messages=[
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": text_message}
@@ -94,10 +117,6 @@ def webhook():
                 print(f"Error procesando con Groq: {e}")
 
     return jsonify({"status": "success"}), 200
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
