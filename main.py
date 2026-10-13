@@ -81,7 +81,7 @@ def webhook():
         if text_message and chat_id:
             try:
                 response = groq_client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
+                    model="qwen/qwen3-32b",
                     messages=[
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": text_message}
@@ -94,6 +94,10 @@ def webhook():
                 print(f"Error procesando con Groq: {e}")
 
     return jsonify({"status": "success"}), 200
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
