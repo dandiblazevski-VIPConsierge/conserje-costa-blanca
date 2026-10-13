@@ -1,5 +1,4 @@
 flask
 requests
 google-generativeai
-whatsapp-api-client-python
 gunicorn
