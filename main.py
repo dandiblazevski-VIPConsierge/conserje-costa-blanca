@@ -55,8 +55,8 @@ def webhook():
                 {text_message}
                 """
 
-                # Llamada HTTP directa con el modelo ultraestable gemini-1.5-flash
-                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+                # Llamada HTTP directa con la URL correcta del modelo actual
+                gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={GEMINI_API_KEY}"
                 gemini_payload = {
                     "contents": [{
                         "parts": [{"text": prompt}]
