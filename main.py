@@ -47,19 +47,27 @@ def webhook():
                     "Content-Type": "application/json"
                 }
                 
-                # Autodiagnóstico en los logs: Imprime los modelos exactos permitidos para tu clave
+                # Selección automática basada exactamente en los modelos devueltos por tus logs
+                selected_model = "qwen/qwen3.8-27b"
                 try:
                     models_resp = requests.get("https://api.groq.com/openai/v1/models", headers=groq_headers)
                     if models_resp.status_code == 200:
-                        print("Modelos disponibles en tu cuenta:", [m.get("id") for m in models_resp.json().get("data", [])])
+                        model_list = models_resp.json().get("data", [])
+                        for m in model_list:
+                            m_id = m.get("id", "")
+                            # Priorizar modelos de chat válidos encontrados en tu cuenta
+                            if ("qwen" in m_id or "gpt-oss" in m_id) and "guard" not in m_id and "safeguard" not in m_id:
+                                selected_model = m_id
+                                break
+                        print(f"Modelo de chat seleccionado: {selected_model}")
                     else:
                         print("Error al listar modelos:", models_resp.text)
                 except Exception as model_err:
                     print("Excepción al consultar modelos:", model_err)
 
-                # Petición de chat con el modelo estándar gratuito
+                # Petición de chat con el modelo disponible en tu cuenta
                 groq_payload = {
-                    "model": "llama-3.1-8b-instant",
+                    "model": selected_model,
                     "messages": [
                         {
                             "role": "system",
