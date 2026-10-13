@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, request, jsonify
 import requests
 from google import genai
@@ -59,12 +60,23 @@ def webhook():
                 {text_message}
                 """
 
-                # Generar respuesta con el modelo actual oficial
-                response = client.models.generate_content(
-                    model="gemini-3.8-flash",
-                    contents=prompt,
-                )
-                ai_reply = response.text
+                # Generar respuesta con reintentos automáticos ante saturación (503)
+                response = None
+                for attempt in range(3):
+                    try:
+                        response = client.models.generate_content(
+                            model="gemini-3.8-flash",
+                            contents=prompt,
+                        )
+                        break
+                    except Exception as api_err:
+                        print(f"Intento {attempt + 1} fallido por saturación de Google: {api_err}")
+                        time.sleep(2)
+
+                if response and hasattr(response, 'text'):
+                    ai_reply = response.text
+                else:
+                    ai_reply = "¡Hola! Disculpa, en este momento el sistema está procesando muchas peticiones. Por favor, repíteme tu pregunta en un segundito."
 
                 # Enviar respuesta de vuelta a WhatsApp usando la API HTTP de Green-API
                 url = f"https://7107.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
