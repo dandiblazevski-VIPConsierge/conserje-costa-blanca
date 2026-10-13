@@ -59,9 +59,9 @@ def webhook():
                 {text_message}
                 """
 
-                # Generar respuesta con la API actual de Gemini
+                # Generar respuesta con el modelo exacto que solicita Google
                 response = client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-3.8-flash",
                     contents=prompt,
                 )
                 ai_reply = response.text
