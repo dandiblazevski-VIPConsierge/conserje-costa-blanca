@@ -4,13 +4,13 @@ import requests
 
 app = Flask(__name__)
 
-# Configuración de credenciales desde las Variables de Entorno de Render (100% Gratis)
+# Configuración de credenciales desde las Variables de Entorno de Render
 ID_INSTANCE = os.getenv("GREEN_API_ID_INSTANCE")
 API_TOKEN_INSTANCE = os.getenv("GREEN_API_TOKEN_INSTANCE")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# Cargar la guía de información si existe
-GUIDE_TEXT = "Bienvenido a tu alojamiento en la Costa Blanca."
+# Cargar la guía de información desde guia.txt
+GUIDE_TEXT = "Información del alojamiento no disponible."
 if os.path.exists("guia.txt"):
     with open("guia.txt", "r", encoding="utf-8") as f:
         GUIDE_TEXT = f.read()
@@ -47,7 +47,7 @@ def webhook():
                     "Content-Type": "application/json"
                 }
                 
-                # Selección automática basada exactamente en los modelos devueltos por tus logs
+                # Selección automática del modelo disponible
                 selected_model = "qwen/qwen3.8-27b"
                 try:
                     models_resp = requests.get("https://api.groq.com/openai/v1/models", headers=groq_headers)
@@ -55,7 +55,6 @@ def webhook():
                         model_list = models_resp.json().get("data", [])
                         for m in model_list:
                             m_id = m.get("id", "")
-                            # Priorizar modelos de chat válidos encontrados en tu cuenta
                             if ("qwen" in m_id or "gpt-oss" in m_id) and "guard" not in m_id and "safeguard" not in m_id:
                                 selected_model = m_id
                                 break
@@ -65,13 +64,31 @@ def webhook():
                 except Exception as model_err:
                     print("Excepción al consultar modelos:", model_err)
 
-                # Petición de chat con el modelo disponible en tu cuenta
+                # Definición del System Prompt optimizado para WhatsApp
+                system_prompt = f"""
+Eres un conserje virtual profesional, extremadamente paciente, educado y servicial para una propiedad de alquiler turístico en Skopie, Macedonia.
+
+REGLAS ABSOLUTAS Y OBLIGATORIAS:
+1. INFORMACIÓN DE LA GUÍA: Para normas, códigos, WiFi, check-in y emergencias, cíñete ESTRICTAMENTE a los datos de la guía provista.
+2. CERO INVENTOS CRÍTICOS: Si un huésped pregunta algo importante sobre el funcionamiento de la casa que no está en la guía, no lo adivines; deriva amablemente al anfitrión por WhatsApp al +43 67761789024.
+3. PREGUNTAS COTIDIANAS O DE SENTIDO COMÚN: Si preguntan por cosas cotidianas (dónde están los cubiertos, vasos, basura, etc.), responde guiándote por la lógica general de cualquier hogar con naturalidad y cortesía, sin inventar cajones o armarios exactos.
+4. RECOMENDACIONES LOCALES (Restaurantes, farmacias, cafeterías, peluquerías, etc.):
+   - Responde SIEMPRE con una lista clara de 3 a 4 opciones recomendadas en formato de viñetas (*).
+   - Incluye el nombre del lugar, una breve descripción útil y su enlace directo a Google Maps.
+   - NUNCA UTILICES TABLAS MARKDOWN (|---|).
+5. IDIOMA: Responde SIEMPRE en el mismo idioma exacto en el que te escriba el usuario (macedonio, inglés, español, etc.). Mantén un formato limpio, conciso y optimizado para WhatsApp.
+
+GUÍA DEL ALOJAMIENTO:
+{GUIDE_TEXT}
+"""
+
+                # Petición a la API de Groq
                 groq_payload = {
                     "model": selected_model,
                     "messages": [
                         {
                             "role": "system",
-                            "content": f"Eres un conserje virtual amable y eficiente para alojamientos turísticos en la Costa Blanca. Respondes de forma clara, educada y servicial basándote en la siguiente información de la guía del alojamiento:\n\n{GUIDE_TEXT}"
+                            "content": system_prompt
                         },
                         {
                             "role": "user",
@@ -95,7 +112,7 @@ def webhook():
                 else:
                     print(f"Error detallado de Groq HTTP: {groq_resp.text}")
 
-                # Enviar respuesta de vuelta a WhatsApp mediante Green-API
+                # Enviar respuesta a WhatsApp mediante Green-API
                 url = f"https://7107.api.greenapi.com/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN_INSTANCE}"
                 payload = {
                     "chatId": chat_id,
@@ -113,6 +130,9 @@ def webhook():
 
     return jsonify({"status": "success"}), 200
 
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
