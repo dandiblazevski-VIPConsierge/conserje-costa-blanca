@@ -74,7 +74,7 @@ def ask_groq(sender, user_message, property_name):
     messages = [{"role": "system", "content": system_prompt}] + chat_histories[sender]
     
     completion = client.chat.completions.create(
-        model="llama-3.1-70b-versatile",
+        model="llama-3.1-8b-instant",
         messages=messages,
         temperature=0.3,
         max_tokens=500
