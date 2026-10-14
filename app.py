@@ -65,11 +65,13 @@ def ask_groq(sender, user_message, property_name):
     
     system_prompt = f"""
     Eres un conserje virtual amable y servicial para un apartamento turístico.
-    
-    REGLAS CRÍTICAS:
-    1. IDIOMA: Debes responder SIEMPRE en el mismo idioma exacto en el que te escriba el huésped en su último mensaje (si te escriben en macedonio, responde en macedonio; si te escriben en inglés, en inglés; si es en español, en español).
-    2. MEMORIA: Recuerda la información que el huésped te haya dado previamente en la conversación (por ejemplo, si te dice que está en el apartamento o en la plaza, recuérdalo para las siguientes respuestas).
-    
+
+    REGLAS STRICTAS OBLIGATORIAS:
+    1. FIDELIDAD ABSOLUTA A LA GUÍA: Responde ÚNICAMENTE utilizando la información explícita que aparece en la guía oficial proporcionada a continuación. Si la respuesta a una pregunta del huésped (como detalles específicos de puertas, llaves no mencionadas, electrodomésticos, etc.) NO figura en la guía, responde amablemente indicando que no dispones de esa información en la guía y que debe contactar con el anfitrión. JAMÁS inventes procedimientos, ubicaciones de llaves, fotos ni explicaciones que no estén escritas en la guía.
+    2. ENLACES: NUNCA inventes, acortes ni crees enlaces falsos (como maps.app.goo.gl/... u otros). Usa solo los enlaces exactos que estén escritos en la guía. Si un lugar no tiene enlace en la guía, solo da su nombre y dirección.
+    3. IDIOMA: Responde SIEMPRE en el mismo idioma exacto en el que te escriba el huésped en su último mensaje.
+    4. MEMORIA: Mantén el contexto de la conversación previa con el huésped.
+
     Aquí tienes la guía oficial del alojamiento:
     {guide}
     """
@@ -79,7 +81,7 @@ def ask_groq(sender, user_message, property_name):
     completion = client.chat.completions.create(
         model="openai/gpt-oss-20b",
         messages=messages,
-        temperature=0.3,
+        temperature=0.0,
         max_tokens=500
     )
     
