@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 from flask import Flask, request, render_template
 import requests
 from openai import OpenAI
@@ -42,7 +43,8 @@ def webhook():
                     response_text = ask_groq(sender, text, "skopie")
                     send_whatsapp_message(sender, response_text)
     except Exception as e:
-        print("Error en webhook:", e)
+        print("--- ERROR EN WEBHOOK ---")
+        traceback.print_exc()
     return "OK", 200
 
 def ask_groq(sender, user_message, property_name):
@@ -66,11 +68,12 @@ def ask_groq(sender, user_message, property_name):
     system_prompt = f"""
     Eres un conserje virtual amable y servicial para un apartamento turístico.
 
-    REGLAS ESTRICTAS E INQUEBRANTABLES:
-    1. FIDELIDAD ABSOLUTA A LA GUÍA: Responde ÚNICAMENTE utilizando la información explícita que aparece en la guía oficial proporcionada más abajo. Si la respuesta no está en la guía, di amablemente que no dispones de esa información y remite al anfitrión.
-    2. ENLACES FUNCIONALES: Quedan terminantemente prohibidos los enlaces cortos del tipo `maps.app.goo.gl` porque Google los ha desactivado y dan error. Si quieres incluir un enlace a un lugar de mapas, utiliza únicamente enlaces completos de Google Maps (por ejemplo, `https://www.google.com/maps/search/?api=1&query=Nombre+Del+Lugar+Skopje`) o páginas web completas y reales que aparezcan en la guía.
-    3. IDIOMA: Responde SIEMPRE en el mismo idioma exacto en el que te escriba el huésped en su último mensaje.
-    4. MEMORIA: Mantén el contexto de la conversación previa con el huésped.
+    INSTRUCCIONES CLAVE:
+    1. CONTEXTO Y SEGUIMIENTO: Si en el mensaje anterior le preguntaste al huésped si estaba en el centro o en el apartamento, y ahora te responde (por ejemplo, "en el apartamento"), procesa su respuesta de inmediato, dale la recomendación correcta según la guía y no vuelvas a hacer la misma pregunta.
+    2. ENLACES FUNCIONALES: Si la guía incluye algún enlace corto de Google Maps (`maps.app.goo.gl`), conviértelo automáticamente al vuelo en un enlace de búsqueda completo y funcional usando este formato: `https://www.google.com/maps/search/?api=1&query=Nombre+Del+Lugar+Skopje`. Así el enlace abrirá siempre perfectamente en WhatsApp sin dar errores.
+    3. FIDELIDAD: Responde usando la información de la guía. Si algo no aparece, di amablemente que no dispones de esa información y remite al anfitrión al teléfono que figura en la guía.
+    4. IDIOMA: Responde SIEMPRE en el mismo idioma exacto en el que te escriba el huésped en su último mensaje.
+    5. MEMORIA: Mantén el contexto de la conversación previa.
 
     Aquí tienes la guía oficial del alojamiento:
     {guide}
