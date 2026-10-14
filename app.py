@@ -1,140 +1,104 @@
 import os
 import json
+from flask import Flask, request, render_template
 import requests
-from flask import Flask, request, jsonify, render_template
 from groq import Groq
 
 app = Flask(__name__)
 
-# Configuración de credenciales desde variables de entorno
-GREEN_API_INSTANCE_ID = os.environ.get("GREEN_API_INSTANCE_ID")
-GREEN_API_TOKEN = os.environ.get("GREEN_API_TOKEN")
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+# Memoria temporal de chat por usuario para mantener el contexto y la ubicación
+chat_histories = {}
 
-groq_client = Groq(api_key=GROQ_API_KEY)
-
-def cargar_propiedad(nombre_propiedad="skopie"):
-    """Carga la configuración y la guía específica de la propiedad de forma modular."""
-    base_path = os.path.join("properties", nombre_propiedad)
-    
-    config = {}
-    config_path = os.path.join(base_path, "config.json")
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                config = json.load(f)
-        except Exception as e:
-            print(f"Error cargando config.json: {e}")
-            
-    guia_content = "No se pudo cargar la información de la guía."
-    guia_path = os.path.join(base_path, "guia.txt")
-    if os.path.exists(guia_path):
-        try:
-            with open(guia_path, "r", encoding="utf-8") as f:
-                guia_content = f.read()
-        except Exception as e:
-            print(f"Error cargando guia.txt: {e}")
-            
-    return config, guia_content
-
-# Cargamos por defecto la propiedad de Skopie
-CONFIG, GUIA_CONTENT = cargar_propiedad("skopie")
-
-def obtener_modelo_activo():
-    """Obtiene dinámicamente un modelo de chat válido, excluyendo guards y embeddings."""
+def get_property_config(property_name="skopie"):
     try:
-        modelos_response = groq_client.models.list()
-        modelos_disponibles = [m.id for m in modelos_response.data]
-        
-        # Buscar preferiblemente modelos de chat estables
-        for prefijo in ["llama-3.3-70b", "llama3-70b", "llama-3.1-8b", "llama3-8b", "llama-3", "qwen", "gemma2", "mistral"]:
-            for m_id in modelos_disponibles:
-                if prefijo in m_id and "guard" not in m_id and "embed" not in m_id and "whisper" not in m_id:
-                    print(f"Modelo de chat seleccionado: {m_id}")
-                    return m_id
-        
-        # Buscar cualquier otro modelo de chat válido
-        for m_id in modelos_disponibles:
-            if "guard" not in m_id and "embed" not in m_id and "whisper" not in m_id:
-                print(f"Usando modelo alternativo válido: {m_id}")
-                return m_id
-    except Exception as e:
-        print(f"Error consultando modelos activos: {e}")
-    
-    return "llama-3.1-8b-instant"
+        with open(f"properties/{property_name}/config.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"nombre": "Alojamiento"}
 
-SYSTEM_PROMPT = f"""
-Eres un conserje virtual altamente profesional, atento y paciente para el alojamiento turístico: {CONFIG.get('nombre', 'Alojamiento')} ubicado en {CONFIG.get('ubicacion', 'Skopie')}.
-
-INFORMACIÓN OFICIAL DEL ALOJAMIENTO (guia.txt):
-{GUIA_CONTENT}
-
-REGLAS ESTRICTAS DE FORMATO Y COMPORTAMIENTO:
-1. IDIOMA: Responde siempre en el mismo idioma en el que te escriba el huésped (español, inglés, macedonio, etc.).
-2. NO USAR TABLAS EN MARKDOWN. WhatsApp no las renderiza bien.
-3. RECOMENDACIONES DE COMIDA / RESTAURANTES:
-   - Cuando el huésped pregunte por restaurantes, dónde comer, cenar o desayunar, NUNCA le envíes la lista directa de primeras.
-   - Pregúntale primero amablemente dónde se encuentra en ese momento (ejemplo: si está en el alojamiento/casa, en el centro o en el bazar).
-   - Una vez que responda su ubicación, consulta 'guia.txt' y recomiéndale 2 opciones de esa zona concreta en formato de lista con viñetas (*) e incluye los enlaces a Google Maps exactos que aparecen en la guía.
-4. REGLA ANTI-ALUCINACIÓN: Está prohibido inventar o recomendar lugares que no estén en guia.txt. Si te preguntan algo que no aparece en la guía o requiere intervención del dueño, facilítales con amabilidad el contacto directo del anfitrión ({CONFIG.get('contacto_anfitrion', '+43 67761789024')}).
-5. FORMATO DE LISTAS: Cuando des recomendaciones, usa viñetas (*) con un máximo de 2-3 opciones y añade sus enlaces directos a Google Maps.
-"""
-
-def enviar_mensaje_whatsapp(chat_id, texto):
-    url = f"https://7107.api.greenapi.com/waInstance{GREEN_API_INSTANCE_ID}/sendMessage/{GREEN_API_TOKEN}"
-    payload = {
-        "chatId": chat_id,
-        "message": texto
-    }
-    headers = {'Content-Type': 'application/json'}
+def get_property_guide(property_name="skopie"):
     try:
-        response = requests.post(url, json=payload, headers=headers)
-        print(f"Respuesta de Green-API: {response.status_code} - {response.text}")
-    except Exception as e:
-        print(f"Error enviando mensaje por Green-API: {e}")
+        with open(f"properties/{property_name}/guia.txt", "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return "Guía no disponible."
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return render_template("index.html", config=CONFIG)
+    config = get_property_config("skopie")
+    return render_template("index.html", config=config)
 
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    data = request.get_json()
-    print("Webhook recibido:", data)
+    data = request.json
+    try:
+        if data.get("typeWebhook") == "incomingMessageReceived":
+            message_data = data.get("messageData", {})
+            if message_data.get("typeMessage") == "textMessage":
+                text = message_data.get("textMessageData", {}).get("textMessage", "")
+                sender = data.get("senderData", {}).get("chatId", "")
+                
+                if sender and text:
+                    response_text = ask_groq(sender, text, "skopie")
+                    send_whatsapp_message(sender, response_text)
+    except Exception as e:
+        print("Error en webhook:", e)
+    return "OK", 200
 
-    if not data:
-        return jsonify({"status": "error", "message": "No data"}), 400
+def ask_groq(sender, user_message, property_name):
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+    guide = get_property_guide(property_name)
+    
+    # Inicializar historial del usuario si no existe
+    if sender not in chat_histories:
+        chat_histories[sender] = []
+    
+    # Guardar mensaje del usuario en la memoria
+    chat_histories[sender].append({"role": "user", "content": user_message})
+    
+    # Mantener solo los últimos 6 mensajes para no sobrecargar
+    if len(chat_histories[sender]) > 6:
+        chat_histories[sender] = chat_histories[sender][-6:]
+    
+    system_prompt = f"""
+    Eres un conserje virtual amable y servicial para un apartamento turístico.
+    
+    REGLAS CRÍTICAS:
+    1. IDIOMA: Debes responder SIEMPRE en el mismo idioma exacto en el que te escriba el huésped en su último mensaje (si te escriben en macedonio, responde en macedonio; si te escriben en inglés, en inglés; si es en español, en español).
+    2. MEMORIA: Recuerda la información que el huésped te haya dado previamente en la conversación (por ejemplo, si te dice que está en el apartamento o en la plaza, recuérdalo para las siguientes respuestas).
+    
+    Aquí tienes la guía oficial del alojamiento:
+    {guide}
+    """
+    
+    messages = [{"role": "system", "content": system_prompt}] + chat_histories[sender]
+    
+    completion = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=messages,
+        temperature=0.3,
+        max_tokens=500
+    )
+    
+    bot_reply = completion.choices[0].message.content
+    
+    # Guardar la respuesta del bot en la memoria
+    chat_histories[sender].append({"role": "assistant", "content": bot_reply})
+    
+    return bot_reply
 
-    type_webhook = data.get("typeWebhook")
+def send_whatsapp_message(chat_id, message):
+    instance_id = os.environ.get("GREEN_API_INSTANCE_ID")
+    token = os.environ.get("GREEN_API_TOKEN")
+    url = f"https://api.green-api.com/waInstance{instance_id}/sendMessage/{token}"
+    payload = {
+        "chatId": chat_id,
+        "message": message
+    }
+    requests.post(url, json=payload)
 
-    if type_webhook == "incomingMessageReceived":
-        message_data = data.get("messageData", {})
-        sender_data = data.get("senderData", {})
-        chat_id = sender_data.get("chatId")
-
-        text_message = ""
-        if message_data.get("typeMessage") == "textMessage":
-            text_message = message_data.get("textMessageData", {}).get("textMessage", "")
-        elif message_data.get("typeMessage") == "extendedTextMessage":
-            text_message = message_data.get("extendedTextMessageData", {}).get("text", "")
-
-        if text_message and chat_id:
-            try:
-                modelo_a_usar = obtener_modelo_activo()
-                response = groq_client.chat.completions.create(
-                    model=modelo_a_usar,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": text_message}
-                    ],
-                    temperature=0.3
-                )
-                bot_reply = response.choices[0].message.content
-                enviar_mensaje_whatsapp(chat_id, bot_reply)
-            except Exception as e:
-                print(f"Error procesando con Groq: {e}")
-
-    return jsonify({"status": "success"}), 200
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
