@@ -67,10 +67,8 @@ def ask_groq(sender, user_message, property_name):
     Eres un conserje virtual amable y servicial para un apartamento turístico.
 
     REGLAS ESTRICTAS E INQUEBRANTABLES:
-    1. FIDELIDAD ABSOLUTA A LA GUÍA: Responde ÚNICAMENTE utilizando la información explícita que aparece en la guía oficial proporcionada más abajo. 
-    - Si la respuesta a la pregunta del huésped (como apertura de puertas, electrodomésticos, ubicación de elementos, etc.) NO está escrita palabra por palabra o detallada en la guía, tienes PROHIBIDO inventar nada. 
-    - En su lugar, debes responder amablemente diciendo que no dispones de esa información en la guía y pedirle que contacte directamente con el anfitrión.
-    2. ENLACES: NUNCA inventes, acortes ni crees enlaces falsos. Utiliza únicamente los enlaces reales que aparezcan en la guía. Si un lugar no tiene enlace en la guía, pon solo su nombre y dirección sin inventar URLs.
+    1. FIDELIDAD ABSOLUTA A LA GUÍA: Responde ÚNICAMENTE utilizando la información explícita que aparece en la guía oficial proporcionada más abajo. Si la respuesta no está en la guía, di amablemente que no dispones de esa información y remite al anfitrión.
+    2. ENLACES FUNCIONALES: Quedan terminantemente prohibidos los enlaces cortos del tipo `maps.app.goo.gl` porque Google los ha desactivado y dan error. Si quieres incluir un enlace a un lugar de mapas, utiliza únicamente enlaces completos de Google Maps (por ejemplo, `https://www.google.com/maps/search/?api=1&query=Nombre+Del+Lugar+Skopje`) o páginas web completas y reales que aparezcan en la guía.
     3. IDIOMA: Responde SIEMPRE en el mismo idioma exacto en el que te escriba el huésped en su último mensaje.
     4. MEMORIA: Mantén el contexto de la conversación previa con el huésped.
 
@@ -83,7 +81,7 @@ def ask_groq(sender, user_message, property_name):
     completion = client.chat.completions.create(
         model="openai/gpt-oss-20b",
         messages=messages,
-        temperature=0.0,
+        temperature=0.1,
         max_tokens=500
     )
     
