@@ -46,7 +46,6 @@ def webhook():
     return "OK", 200
 
 def ask_groq(sender, user_message, property_name):
-    # Cliente oficial compatible con Groq según su documentación actual
     client = OpenAI(
         api_key=os.environ.get("GROQ_API_KEY"),
         base_url="https://api.groq.com/openai/v1"
@@ -78,7 +77,7 @@ def ask_groq(sender, user_message, property_name):
     messages = [{"role": "system", "content": system_prompt}] + chat_histories[sender]
     
     completion = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model="openai/gpt-oss-20b",
         messages=messages,
         temperature=0.3,
         max_tokens=500
