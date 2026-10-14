@@ -2,7 +2,7 @@ import os
 import json
 from flask import Flask, request, render_template
 import requests
-from groq import Groq
+from openai import OpenAI
 
 app = Flask(__name__)
 
@@ -46,7 +46,11 @@ def webhook():
     return "OK", 200
 
 def ask_groq(sender, user_message, property_name):
-    client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+    # Cliente oficial compatible con Groq según su documentación actual
+    client = OpenAI(
+        api_key=os.environ.get("GROQ_API_KEY"),
+        base_url="https://api.groq.com/openai/v1"
+    )
     guide = get_property_guide(property_name)
     
     # Inicializar historial del usuario si no existe
