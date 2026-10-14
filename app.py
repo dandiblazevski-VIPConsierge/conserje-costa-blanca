@@ -74,7 +74,7 @@ def ask_groq(sender, user_message, property_name):
     messages = [{"role": "system", "content": system_prompt}] + chat_histories[sender]
     
     completion = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model="llama-3.1-70b-versatile",
         messages=messages,
         temperature=0.3,
         max_tokens=500
@@ -99,7 +99,3 @@ def send_whatsapp_message(chat_id, message):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
